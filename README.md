@@ -1,15 +1,16 @@
 # 🩺 MedicalAssistantGPT
 
-Welcome to **MedicalAssistantGPT**, a simple yet powerful Streamlit dashboard that leverages **MongoDB**, **Streamlit**, and **OpenAI** to help users explore medical symptom-disorder relationships. This repository is part of the *Big Data Engineering* course for the academic year **2024–2025** 🎓.
+Welcome to **MedicalAssistantGPT**, a simple yet powerful Streamlit dashboard that leverages **MongoDB**, **Streamlit**, **OpenAI**, and **Gemini** to help users explore medical symptom-disorder relationships. This repository is part of the *Big Data Engineering* course for the academic year **2024–2025** 🎓.
 
 ## ✨ Features
 
 - 📊 Interactive dashboard built with **Streamlit**
-- 🧠 Uses **OpenAI GPT** to generate simple medical explanations
+- 🧠 Uses **OpenAI GPT** or **Google Gemini** to generate simple medical explanations
 - 🗃️ Data storage and querying powered by **MongoDB Atlas**
 - 🔄 Easy CSV data import via `load_data.py`
 - 🔍 Symptom-based disorder filtering
 - 📋 Real-time relation type stats
+- 🎛️ LLM provider selection directly from sidebar
 
 ---
 
@@ -18,7 +19,7 @@ Welcome to **MedicalAssistantGPT**, a simple yet powerful Streamlit dashboard th
 ```
 .
 ├── .streamlit/
-│   └── secrets.toml         # Stores API keys (OpenAI)
+│   └── secrets.toml         # Stores API keys (OpenAI / Gemini)
 ├── .gitignore
 ├── dashboard.py             # Streamlit app for interactive exploration
 ├── LICENSE
@@ -56,16 +57,21 @@ client = MongoClient("your-mongodb-connection-string")
 
 ---
 
-### 3. 🔐 Set Up OpenAI API Key
+### 3. 🔐 Set Up LLM API Keys (OpenAI and/or Gemini)
 
-In the file `.streamlit/secrets.toml`, store your OpenAI key like this:
+In the file `.streamlit/secrets.toml`, store one or both keys like this:
 
 ```toml
 [openai]
 api_key = "your-openai-api-key"
+
+[gemini]
+api_key = "your-gemini-api-key"
 ```
 
 > 🔒 *This file is ignored by Git. Don’t commit your secrets!*
+
+If you choose **OpenAI** in the sidebar, only the OpenAI key is required. If you choose **Gemini**, only the Gemini key is required.
 
 ---
 
@@ -95,7 +101,7 @@ Then visit [http://localhost:8501](http://localhost:8501) in your browser 🚀
 
 - The dashboard lets users select **two or more symptoms** from the sidebar.
 - It queries **MongoDB** to find disorders that match **all selected symptoms**.
-- Then, it uses **GPT** to explain those disorders in simple terms—perfect for educational and demo purposes!
+- Then, it uses the selected LLM provider (**OpenAI** or **Gemini**) to explain those disorders in simple terms—perfect for educational and demo purposes!
 
 ---
 

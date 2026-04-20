@@ -1,15 +1,16 @@
 import streamlit as st
 
 from bson.son import SON
+from google import genai
 from openai import OpenAI
 from pymongo import MongoClient
 
 
 if __name__ == "__main__":
     # ---- COLLEGAMENTO A MONGODB ----
-    client = MongoClient('mongodb+srv://giuseppericcio:1234@cluster0.weahziy.mongodb.net/?retryWrites=true&w=majority')
+    mongo_client = MongoClient('mongodb+srv://giuseppericcio:1234@cluster0.weahziy.mongodb.net/?retryWrites=true&w=majority')
 
-    db = client.healthcare
+    db = mongo_client.healthcare
     relations = db.relations
 
     # ---- CONFIGURAZIONE PAGINA ----
@@ -38,6 +39,7 @@ if __name__ == "__main__":
 
     # ---- SIDEBAR ----
     possible_symptoms = get_symptoms(relations)
+    llm_provider = st.sidebar.selectbox("Choose LLM provider:", ["OpenAI", "Gemini"])
     st.session_state['selected_symptoms'] = st.sidebar.multiselect("Select at least two symptoms: ", possible_symptoms)
     selected_symptoms = st.session_state['selected_symptoms']
 
@@ -77,14 +79,36 @@ if __name__ == "__main__":
                 "about their healthcare. Therefore, you should communicate in a manner that is both " \
                 "compassionate and informative.".format(selected_symptoms, related_disorders)
 
-        client = OpenAI(
-            # This is the default and can be omitted
-            api_key=st.secrets.openai.api_key,
-        )
+        def get_disorder_explanation(provider, user_prompt):
+            if provider == "OpenAI":
+                openai_api_key = st.secrets.get("openai", {}).get("api_key")
+                if not openai_api_key:
+                    raise ValueError("Missing OpenAI API key. Add [openai].api_key in .streamlit/secrets.toml")
+
+                openai_client = OpenAI(api_key=openai_api_key)
+                message = {"role": "user", "content": user_prompt}
+                completion = openai_client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=[message],
+                    temperature=0,
+                )
+                return completion.choices[0].message.content
+
+            gemini_api_key = st.secrets.get("gemini", {}).get("api_key")
+            if not gemini_api_key:
+                raise ValueError("Missing Gemini API key. Add [gemini].api_key in .streamlit/secrets.toml")
+
+            gemini_client = genai.Client(api_key=gemini_api_key)
+            response = gemini_client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=user_prompt,
+            )
+            return response.text
 
         if len(related_disorders) != 0:
             st.subheader("🧠 Disorder explanation")
-            message = {"role": "user", "content": prompt}
-            st.session_state['completion'] = client.chat.completions.create(model="gpt-4o-mini", messages=[message], temperature=0)
-            completion = st.session_state['completion']
-            st.write(completion.choices[0].message.content)
+            try:
+                explanation = get_disorder_explanation(llm_provider, prompt)
+                st.write(explanation)
+            except Exception as e:
+                st.error(f"Unable to generate explanation with {llm_provider}: {e}")
